@@ -202,7 +202,7 @@ me.Puzzle = (function () {
     
     letter = letter.toLowerCase();
     
-    _puzz[loc.y][loc.x] = letter;
+    _saved[loc.y][loc.x] = letter;
     _gridEls[loc.y][loc.x].innerText = letter;
     
     if (letter) {
