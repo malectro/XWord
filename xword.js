@@ -45,13 +45,15 @@ var clues = {
 me.init = function () {
   var html = '',
     rowEl,
-    cellEl;
+    cellEl,
+    clueCount = 0;
 
   puzz.forEach(function (row, i) {
     rowEl = _.el('tr');
     _gridEls[i] = [];
     
     row.forEach(function (cell, j) {
+      //create cell
       var className;
       
       if (cell === false) {
@@ -68,6 +70,25 @@ me.init = function () {
       
       rowEl.appendChild(cellEl);
       _gridEls[i][j] = cellEl;
+      
+      //populate clues
+      if (!puzz[i][j - 1] || !puzz[i - 1]) {
+        clueCount++;
+        if (!puzz[i][j - 1]) {
+          _clues.across[clueCount] = {
+            hint: clues.across.shift(),
+            x: j,
+            y: i
+          };
+        }
+        if (!puzz[i - 1]) {
+          _clues.down[clueCount] = {
+            hint: clues.down.shift(),
+            x: j,
+            y: i
+          };
+        }
+      }
     });
     
     _grid.appendChild(rowEl);
@@ -88,9 +109,9 @@ me.init = function () {
 me.Cursor = (function () {
   var me = {},
     _loc = {x: 0, y: 0},
+    _clue = 1,
     _dir,
-    _el,
-    _word;
+    _el;
     
   me.LEFT = 37;
   me.RIGHT = 39;
@@ -103,11 +124,6 @@ me.Cursor = (function () {
     _el = _.el('div', {
       className: 'xw-cursor'
     });
-    _word = _.el('div', {
-      className: 'xw-word'
-    });
-    
-    _case.appendChild(_word);
     _case.appendChild(_el);
   };
 
@@ -179,7 +195,7 @@ me.Cursor = (function () {
   };
   
   me.nextClue = function () {
-  
+    //TODO: implement
   };
   
   me.toggleDir = function () {
