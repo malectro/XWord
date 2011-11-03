@@ -8,7 +8,8 @@ var me = {},
   
   $ = document.getElementById,
   
-  _grid = document.getElementById('grid')
+  _grid = document.getElementById('grid'),
+  _gridEls = [],
   _case = _grid.parentNode,
   _saved = [],
   _puzz = [],
@@ -48,6 +49,7 @@ me.init = function () {
 
   puzz.forEach(function (row, i) {
     rowEl = _.el('tr');
+    _gridEls[i] = [];
     
     row.forEach(function (cell, j) {
       var className;
@@ -65,6 +67,7 @@ me.init = function () {
       _.data(cellEl, {y: i, x: j});
       
       rowEl.appendChild(cellEl);
+      _gridEls[i][j] = cellEl;
     });
     
     _grid.appendChild(rowEl);
@@ -112,23 +115,27 @@ me.Cursor = (function () {
     var temp;
     
     if (typeof to !== 'object') {
-      temp = {x: _loc.x + 0, y: _loc.y + 0};
+      temp = _.copy(_loc);
     
       switch (to) {
         case me.LEFT:
           temp.x--;
+          _dir = me.RIGHT;
           break;
         
         case me.RIGHT:
           temp.x++;
+          _dir = me.RIGHT;
           break;
           
         case me.UP:
           temp.y--;
+          _dir = me.DOWN;
           break;
           
         case me.DOWN:
           temp.y++;
+          _dir = me.DOWN;
           break;
       }
       
@@ -136,12 +143,13 @@ me.Cursor = (function () {
     }
     
     if (!_puzz[to.y] || !_puzz[to.y][to.x]) {
-      return;
+      return false;
     }
     
     _loc = to;
 
     me.moveCSS();
+    return true;
   };
   
   me.moveCSS = function () {
@@ -151,7 +159,37 @@ me.Cursor = (function () {
     });
   };
   
+  me.loc = function () {
+    return _.copy(_loc);
+  };
   
+  me.prev = function () {
+    if (_dir === me.RIGHT) {
+      me.move(me.LEFT);
+    }
+    else {
+      me.move(me.UP);
+    }
+  };
+  
+  me.next = function () {
+    if (!me.move(_dir)) {
+      me.nextClue();
+    }
+  };
+  
+  me.nextClue = function () {
+  
+  };
+  
+  me.toggleDir = function () {
+    if (_dir === me.RIGHT) {
+      _dir = me.DOWN;
+    }
+    else {
+      _dir = me.RIGHT;
+    }
+  };
   
   return me;
 }());
@@ -159,7 +197,17 @@ me.Cursor = (function () {
 me.Puzzle = (function () {
   var me = {};
 
-  me.fill = function (key) {
+  me.fill = function (letter) {
+    var loc = XW.Cursor.loc();
+    
+    letter = letter.toLowerCase();
+    
+    _puzz[loc.y][loc.x] = letter;
+    _gridEls[loc.y][loc.x].innerText = letter;
+    
+    if (letter) {
+      XW.Cursor.next();
+    }
   };
 
   return me;
@@ -177,8 +225,9 @@ me.Controls = (function () {
     console.log(e);
     
     if (e.target.className === 'grid-light') {
-      console.log(_.data(e.target));
       XW.Cursor.move(_.data(e.target));
+      
+      e.preventDefault();
     }
   }
   
@@ -190,12 +239,20 @@ me.Controls = (function () {
     if (key <= XW.Cursor.DOWN && key >= XW.Cursor.LEFT) {
       XW.Cursor.move(key);
     }
+    else if (key === 9) {
+      XW.Cursor.nextClue();
+    }
     else if (key === 8 || key === 32) {
       XW.Puzzle.fill('');
+      if (key === 8) {
+        XW.Cursor.prev();
+      }
     }
     else if (key === 189 || (key >= 48 && key <= 57) || (key >= 65 && key <= 90)) {
       XW.Puzzle.fill(String.fromCharCode(key));
     }
+    
+    e.preventDefault();
   }
   
   return me;
@@ -288,6 +345,34 @@ var _ = me._ = (function () {
         _data[id][i] = data[i];
       }
     }
+  };
+  
+  /**
+   * copy
+   * shallow copy function for objects
+   *
+   * @param {object} obj  object to copy
+   */
+  me.copy = function (obj) {
+    var clone = {};
+    
+    for (var i in obj) {
+      clone[i] = obj[i];
+    }
+    
+    return clone;
+  };
+  
+  /**
+   * create
+   * Crockford's prototypal inheritance method
+   *
+   * @param {object} obj  object to extend
+   */
+  me.create = function (obj) {
+    function F() {}
+    F.prototype = obj;
+    return new F();
   };
   
   return me;
