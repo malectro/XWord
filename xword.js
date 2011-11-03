@@ -42,10 +42,13 @@ var clues = {
 };
 
 me.init = function () {
-	var html = '';
+	var html = '',
+    rowEl,
+    cellEl;
 
 	puzz.forEach(function (row, i) {
-		html += '<tr>';
+    rowEl = _.el('tr');
+    
 		row.forEach(function (cell, j) {
 			var className;
 			
@@ -58,12 +61,14 @@ me.init = function () {
 				cell = saved[i][j];
 			}
 			
-			html += '<td class="' + className + '">' + cell + '</td>';
+			cellEl = _.el('td', {className: className, innerText: cell});
+			_.data(cellEl, {y: i, x: j});
+			
+			rowEl.appendChild(cellEl);
 		});
-		html += '</tr>';
+		
+		_grid.appendChild(rowEl);
 	});
-
-	_grid.innerHTML = html;
 
 	_.css(_case, {width: _grid.offsetWidth + 'px'});
 	
@@ -146,6 +151,8 @@ me.Cursor = (function () {
 		});
 	};
 	
+	
+	
 	return me;
 }());
 
@@ -169,6 +176,11 @@ me.Controls = (function () {
 	
 	function _click(e) {
 		console.log(e);
+		
+		if (e.target.className === 'grid-light') {
+		  console.log(_.data(e.target));
+		  XW.Cursor.move(_.data(e.target));
+		}
 	}
 	
 	function _key(e) {
@@ -241,6 +253,13 @@ var _ = me._ = (function () {
 		el.style.cssText += string;
 	};
 	
+	/**
+	 * _.data
+	 * basic, memory-leak-free data getter/setter
+	 *
+	 * @param {DOMElement} el    the dom element to be associated
+	 * @param {object}     data  a key/value store of dat to be added (optional)
+	 */
 	me.data = function (el, data) {
 		var id = el.getAttribute('kDATA');
 	
@@ -249,6 +268,10 @@ var _ = me._ = (function () {
 			el.setAttribute('kDATA', id);
 			_data[id] = {el: el};
 			_ids++;
+		}
+		
+		if (!data) {
+		  return _data[id];
 		}
 		
 		if (typeof data === 'string') {
