@@ -127,30 +127,32 @@ me.Cursor = (function () {
     _case.appendChild(_el);
   };
 
-  me.move = function (to) {
-    var temp;
+  me.move = function (to, keepGoing) {
+    var temp,
+      dir = to,
+      distance = keepGoing || 1;
     
     if (typeof to !== 'object') {
       temp = _.copy(_loc);
     
-      switch (to) {
+      switch (dir) {
         case me.LEFT:
-          temp.x--;
+          temp.x -= distance;
           _dir = me.RIGHT;
           break;
         
         case me.RIGHT:
-          temp.x++;
+          temp.x += distance;
           _dir = me.RIGHT;
           break;
           
         case me.UP:
-          temp.y--;
+          temp.y -= distance;
           _dir = me.DOWN;
           break;
           
         case me.DOWN:
-          temp.y++;
+          temp.y += distance;
           _dir = me.DOWN;
           break;
       }
@@ -159,6 +161,10 @@ me.Cursor = (function () {
     }
     
     if (!_puzz[to.y] || !_puzz[to.y][to.x]) {
+      if (keepGoing && to.y < _puzz.length && to.x < _puzz[0].length && to.y > 0 && to.x > 0) {
+        return me.move(dir, keepGoing + 1);
+      }
+      
       return false;
     }
     
@@ -207,11 +213,20 @@ me.Cursor = (function () {
     }
   };
   
+  me.getDir = function () {
+    return _dir;
+  };
+  
   return me;
 }());
 
 me.Puzzle = (function () {
-  var me = {};
+  var me = {},
+    _clue;
+  
+  me.findCurrentClue = function () {
+  
+  };
 
   me.fill = function (letter) {
     var loc = XW.Cursor.loc();
@@ -253,7 +268,7 @@ me.Controls = (function () {
     var key = e.which;
     
     if (key <= XW.Cursor.DOWN && key >= XW.Cursor.LEFT) {
-      XW.Cursor.move(key);
+      XW.Cursor.move(key, 1);
     }
     else if (key === 9) {
       XW.Cursor.nextClue();
