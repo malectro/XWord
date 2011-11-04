@@ -124,8 +124,6 @@ me.init = function () {
       }
     }
   }
-  
-  console.log(_clues, _clueLocs);
 
   for (i in me) {
     if (me[i].init) {
@@ -138,7 +136,9 @@ me.Cursor = (function () {
   var me = {},
     _loc = {x: 0, y: 0},
     _clue,
+    _prevClue,
     _dir,
+    _prevDir,
     _el;
     
   me.LEFT = 37;
@@ -200,17 +200,50 @@ me.Cursor = (function () {
     _loc = to;
 
     //set clue
+    _prevClue = _clue;
     _clue = _clueLocs[to.y][to.x][_dir];
 
     me.moveCSS();
+    
+    _prevDir = _dir;
     return true;
   };
   
   me.moveCSS = function () {
+    var loc;
+  
     _.css(_el, {
       left: (_loc.x * CELL_SIZE) + 'px',
       top: (_loc.y * CELL_SIZE) + 'px'
     });
+    
+    console.log(_prevClue, _clue);
+    
+    if (_prevClue === _clue) {
+      return;
+    }
+    
+    loc = _.copy(_prevClue);
+    while (_puzz[loc.y] && _puzz[loc.y][loc.x]) {
+      _gridEls[loc.y][loc.x].className = 'grid-light';
+      if (_prevDir === me.RIGHT) {
+        loc.x++;
+      }
+      else {
+        loc.y++;
+      }
+    }
+    
+    loc = _.copy(_clue);
+    while (_puzz[loc.y] && _puzz[loc.y][loc.x]) {
+      _gridEls[loc.y][loc.x].className = 'grid-light on';
+      if (_dir === me.RIGHT) {
+        loc.x++;
+      }
+      else {
+        loc.y++;
+      }
+    }
   };
   
   me.loc = function () {
@@ -234,8 +267,6 @@ me.Cursor = (function () {
   
   me.nextClue = function () {
     var nextClue;
-    
-    console.log(_clue);
     
     if (_clues[_dir][_clue.i + 1]) {
       nextClue = _clues[_dir][_clue.i + 1];
