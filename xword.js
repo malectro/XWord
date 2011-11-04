@@ -13,10 +13,8 @@ var me = {},
   _case = _grid.parentNode,
   _saved = [],
   _puzz = [],
-  _clues = {
-    across: {},
-    down: {}
-  };
+  _clues = {},
+  _clueLocs = [];
 
 var puzz = [
   ['a', 'b', 'c'],
@@ -47,25 +45,30 @@ me.init = function () {
     rowEl,
     cellEl,
     clueCount = 0;
+    
+  _clues[XW.Cursor.RIGHT] = [];
+  _clues[XW.Cursor.DOWN] = [];
 
   puzz.forEach(function (row, i) {
     rowEl = _.el('tr');
     _gridEls[i] = [];
+    _clueLocs[i] = [];
     
     row.forEach(function (cell, j) {
       //create cell
-      var className;
+      var className,
+        savedCell;
       
       if (cell === false) {
         className = 'grid-dark';
-        cell = '';
+        savedCell = '';
       }
       else {
         className = 'grid-light';
-        cell = saved[i][j];
+        savedCell = saved[i][j];
       }
       
-      cellEl = _.el('td', {className: className, innerText: cell});
+      cellEl = _.el('td', {className: className, innerText: savedCell});
       _.data(cellEl, {y: i, x: j});
       
       rowEl.appendChild(cellEl);
@@ -75,20 +78,26 @@ me.init = function () {
       if (!puzz[i][j - 1] || !puzz[i - 1]) {
         clueCount++;
         if (!puzz[i][j - 1]) {
-          _clues.across[clueCount] = {
+          _clues[XW.Cursor.RIGHT].push({
             hint: clues.across.shift(),
             x: j,
-            y: i
-          };
+            y: i,
+            num: clueCount,
+            i: _clues[XW.Cursor.RIGHT].length
+          });
         }
         if (!puzz[i - 1]) {
-          _clues.down[clueCount] = {
+          _clues[XW.Cursor.DOWN].push({
             hint: clues.down.shift(),
             x: j,
-            y: i
-          };
+            y: i,
+            num: clueCount,
+            i: _clues[XW.Cursor.DOWN].length
+          });
         }
       }
+      
+      _clueLocs[i][j] = {};
     });
     
     _grid.appendChild(rowEl);
@@ -98,6 +107,25 @@ me.init = function () {
   
   _puzz = puzz;
   _saved = saved;
+  
+  for (var type in _clues) {
+    for (var number in _clues[type]) {
+      var loc = _.copy(_clues[type][number]);
+      
+      while (_puzz[loc.y] && _puzz[loc.y][loc.x]) {
+        _clueLocs[loc.y][loc.x][type] = _clues[type][number];
+        
+        if (type === '' + XW.Cursor.DOWN) {
+          loc.y++;
+        }
+        else {
+          loc.x++;
+        }
+      }
+    }
+  }
+  
+  console.log(_clues, _clueLocs);
 
   for (i in me) {
     if (me[i].init) {
@@ -109,7 +137,7 @@ me.init = function () {
 me.Cursor = (function () {
   var me = {},
     _loc = {x: 0, y: 0},
-    _clue = 1,
+    _clue,
     _dir,
     _el;
     
@@ -117,10 +145,11 @@ me.Cursor = (function () {
   me.RIGHT = 39;
   me.UP = 38;
   me.DOWN = 40;
-  
-  _dir = me.RIGHT;
     
   me.init = function () {
+    _dir = me.RIGHT;
+    _clue = _clues[_dir][0];
+  
     _el = _.el('div', {
       className: 'xw-cursor'
     });
@@ -170,6 +199,9 @@ me.Cursor = (function () {
     
     _loc = to;
 
+    //set clue
+    _clue = _clueLocs[to.y][to.x][_dir];
+
     me.moveCSS();
     return true;
   };
@@ -201,7 +233,19 @@ me.Cursor = (function () {
   };
   
   me.nextClue = function () {
-    //TODO: implement
+    var nextClue;
+    
+    console.log(_clue);
+    
+    if (_clues[_dir][_clue.i + 1]) {
+      nextClue = _clues[_dir][_clue.i + 1];
+    }
+    else {
+      me.toggleDir();
+      nextClue = _clues[_dir][0];
+    }
+    
+    me.move(nextClue);
   };
   
   me.toggleDir = function () {
@@ -221,12 +265,7 @@ me.Cursor = (function () {
 }());
 
 me.Puzzle = (function () {
-  var me = {},
-    _clue;
-  
-  me.findCurrentClue = function () {
-  
-  };
+  var me = {};
 
   me.fill = function (letter) {
     var loc = XW.Cursor.loc();
